@@ -3,14 +3,17 @@ import matplotlib.pyplot as plt
 ######################################################################
 ##### Tree plotting functions from Chapter 3 of
 ##### "Machine Learning in Action".
-#####
-##### Quite extensive use of function attributes.
-##### I replaced the create_plot.ax1 attribute with a regular
-##### variable, which makes plot_node() more reusable
-#####
-##### TODO: plot_tree() attributes, we could actually pass a
-##### ----- plot options object instead
 ######################################################################
+
+class PlotTreeOptions:
+    """using an option class to replace plot_tree() attributes.
+    Note that plot_tree() updates the xoff and yoff members, so we
+    can't easily use an immutable object"""
+    def __init__(self, totalw, totald, xoff, yoff):
+        self.totalw = totalw
+        self.totald = totald
+        self.xoff = xoff
+        self.yoff = yoff
 
 decision_node = dict(boxstyle='sawtooth', fc='0.8')
 leaf_node = dict(boxstyle='round4', fc='0.8')
@@ -69,24 +72,24 @@ def plot_mid_text(axes, center_pt, parent_pt, text):
     ymid = (parent_pt[1] - center_pt[1]) / 2.0 + center_pt[1]
     axes.text(xmid, ymid, text)
 
-def plot_tree(axes, mytree, parent_pt, node_text):
+def plot_tree(axes, mytree, parent_pt, node_text, options):
     num_leafs = get_num_leafs(mytree)
     first_str = mytree.keys()[0]
-    center_pt = (plot_tree.xoff + (1.0 + float(num_leafs)) / 2.0 / plot_tree.totalw,
-                 plot_tree.yoff)
+    center_pt = (options.xoff + (1.0 + float(num_leafs)) / 2.0 / options.totalw,
+                 options.yoff)
     plot_mid_text(axes, center_pt, parent_pt, node_text)
     plot_node(axes, first_str, center_pt, parent_pt, decision_node)
     second_dict = mytree[first_str]
-    plot_tree.yoff = plot_tree.yoff - 1.0 / plot_tree.totald
+    options.yoff = options.yoff - 1.0 / options.totald
     for key in second_dict.keys():
         if type(second_dict[key]).__name__ == 'dict':
-            plot_tree(axes, second_dict[key], center_pt, str(key))
+            plot_tree(axes, second_dict[key], center_pt, str(key), options)
         else:
-            plot_tree.xoff = plot_tree.xoff + 1.0 / plot_tree.totalw
-            plot_node(axes, second_dict[key], (plot_tree.xoff, plot_tree.yoff),
+            options.xoff = options.xoff + 1.0 / options.totalw
+            plot_node(axes, second_dict[key], (options.xoff, options.yoff),
                       center_pt, leaf_node)
-            plot_mid_text(axes, (plot_tree.xoff, plot_tree.yoff), center_pt, str(key))
-    plot_tree.yoff = plot_tree.yoff + 1.0 / plot_tree.totald
+            plot_mid_text(axes, (options.xoff, options.yoff), center_pt, str(key))
+    options.yoff = options.yoff + 1.0 / options.totald
 
 def create_plot(intree):
     fig = plt.figure(1, facecolor='white')
@@ -94,9 +97,8 @@ def create_plot(intree):
     axprops = dict(xticks=[], yticks=[])
     axes = plt.subplot(111, frameon=False, **axprops)
 
-    plot_tree.totalw = float(get_num_leafs(intree))
-    plot_tree.totald = float(get_tree_depth(intree))
-    plot_tree.xoff = -0.5 / plot_tree.totalw
-    plot_tree.yoff = 1.0
-    plot_tree(axes, intree, (0.5, 1.0), '')
+    totalw = float(get_num_leafs(intree))
+    options = PlotTreeOptions(totalw, float(get_tree_depth(intree)),
+                              -0.5 / totalw, 1.0)
+    plot_tree(axes, intree, (0.5, 1.0), '', options)
     plt.show()
