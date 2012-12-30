@@ -15,6 +15,8 @@ def sigmoid(in_x):
     return 1.0 / (1 + exp(-in_x))
 
 def grad_ascent(data_mat_in, class_labels):
+    """this gradient ascent function returns the weights as
+    a numpy matrix"""
     data_matrix = mat(data_mat_in)
     label_mat = mat(class_labels).transpose()
     m, n = shape(data_matrix)
@@ -31,7 +33,7 @@ def plot_best_fit(weights):
     """Note that the book has an error here (see Errata)
     the weights parameter should be a numpy array, which
     can be obtained by calling getA() on the grad_ascent()
-    function result
+    function result if it is a matrix.
     """
     import matplotlib.pyplot as plt
     data_mat, label_mat = load_dataset()
@@ -60,3 +62,15 @@ def plot_best_fit(weights):
     plt.xlabel('X1')
     plt.ylabel('X2')
     plt.show()
+
+def stoc_grad_ascent0(datamatrix, class_labels):
+    """this gradient ascent function returns the weights
+    as a numpy array"""
+    m, n = shape(datamatrix)
+    alpha = 0.01
+    weights = ones(n)
+    for i in range(m):
+        h = sigmoid(sum(datamatrix[i] * weights))
+        error = class_labels[i] - h
+        weights = weights + alpha * error * datamatrix[i]
+    return weights
