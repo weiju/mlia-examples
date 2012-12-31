@@ -1,5 +1,6 @@
 # Chapter 5: Logistic Regression
 from numpy import *
+import random
 
 def load_dataset():
     data_mat = []
@@ -74,3 +75,57 @@ def stoc_grad_ascent0(datamatrix, class_labels):
         error = class_labels[i] - h
         weights = weights + alpha * error * datamatrix[i]
     return weights
+
+def stoc_grad_ascent1(datamatrix, class_labels, num_iter=150):
+    """this gradient ascent function returns the weights
+    as a numpy array"""
+    m, n = shape(datamatrix)
+    weights = ones(n)
+
+    for j in range(num_iter):
+        data_index = range(m)
+        for i in range(m):
+            alpha = 4 / (1.0 + j + i) + 0.01
+            rand_index = int(random.uniform(0, len(data_index)))
+            h = sigmoid(sum(datamatrix[rand_index] * weights))
+            error = class_labels[rand_index] - h
+            weights = weights + alpha * error * datamatrix[rand_index]
+            del(data_index[rand_index])
+    return weights
+
+def classify_vector(in_x, weights):
+    return 1.0 if sigmoid(sum(in_x * weights)) > 0.5 else 0.0
+
+def colic_test():
+    training_set = []
+    training_labels = []
+
+    with open('horseColicTraining.txt') as train_file:
+        for line in train_file.readlines():
+            row = line.strip().split('\t')
+            training_set.append([float(row[i]) for i in range(21)])
+            training_labels.append(float(row[21]))
+
+    train_weights = stoc_grad_ascent1(array(training_set), training_labels, 500)
+    error_count = 0
+    num_test_vec = 0.0
+
+    with open('horseColicTest.txt') as test_file:
+        for line in test_file.readlines():
+            num_test_vec += 1.0
+            row = line.strip().split('\t')
+            line_arr = [float(row[i]) for i in range(21)]
+            if int(classify_vector(array(line_arr), train_weights)) != int(row[21]):
+                error_count += 1
+    
+    error_rate = float(error_count) / num_test_vec
+    print 'the error rate of this test is: %f' % error_rate
+    return error_rate
+
+def multi_test():
+    num_tests = 10
+    error_sum = 0.0
+    for k in range(num_tests):
+        error_sum += colic_test()
+    print 'after %d iterations the average error is: %f' % (num_tests, error_sum / float(num_tests))
+            
