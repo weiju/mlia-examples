@@ -42,6 +42,8 @@ def smo_simple(datamat_in, class_labels, c, toler, max_iter):
             f_xi = float(multiply(alphas, label_mat).T * \
                              (datamatrix * datamatrix[i,:].T)) + b
             e_i = f_xi - float(label_mat[i])
+
+            # check for violoation of KKT conditions
             if ((label_mat[i] * e_i < -toler) and (alphas[i] < c)) or \
                     ((label_mat[i] * e_i > toler) and (alphas[i] > 0)):
                 j = select_j_rand(i, m)
@@ -71,12 +73,13 @@ def smo_simple(datamat_in, class_labels, c, toler, max_iter):
                     continue
 
                 alphas[j] -= label_mat[j] * (e_i - e_j) / eta
-                alphas[j] = clip(alphas[j], high, low)
+                alphas[j] = clip_alpha(alphas[j], high, low)  # note that numpy has clip()
 
                 if abs(alphas[j] - alpha_j_old) < 0.00001:
                     print 'j not moving enough'
                     continue
 
+                # update i by same amount as j, update is in opposite direction
                 alphas[i] += label_mat[j] * label_mat[i] * \
                     (alpha_j_old - alphas[j])
 
@@ -92,7 +95,7 @@ def smo_simple(datamat_in, class_labels, c, toler, max_iter):
 
                 if alphas[i] > 0 and c > alphas[i]:
                     b = b1
-                elif alphas[i] > 0 and c > alphas[j]:
+                elif alphas[j] > 0 and c > alphas[j]:
                     b = b2
                 else:
                     b = (b1 + b2) / 2.0
