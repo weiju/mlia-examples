@@ -425,3 +425,66 @@ def test_rbf(k1=1.3):
     print 'the test error rate is: %f' % (float(error_count) / m)
 
 
+######################################################################
+#### Handwriting Classification
+######################################################################
+
+
+def img2vector(filename):
+    """read the data in 32x32 0/1 format, (copied from chapter 2)"""
+    return_vect = zeros((1, 1024))
+    with open(filename) as infile:
+        for i in range(32):
+            row = infile.readline()
+            for j in range(32):
+                return_vect[0, 32*i+j] = int(row[j])
+    return return_vect
+
+
+def load_images(dirname):
+    from os import listdir
+    hw_labels = []
+    training_files = listdir(dirname)
+    m = len(training_files)
+    training_mat = zeros((m, 1024))
+    for i in range(m):
+        filename = training_files[i]
+        file_str = filename.split('.')[0]
+        classnum = int(file_str.split('_')[0])
+        if classnum == 9:
+            hw_labels.append(-1)
+        else:
+            hw_labels.append(1)
+        training_mat[i,:] = img2vector('%s/%s' % (dirname, filename))
+    return training_mat, hw_labels
+
+def test_digits(ktup=('rbf', 10)):
+    data_arr, label_arr = load_images('trainingDigits')
+    b, alphas = smo_p(data_arr, label_arr, 200, 0.0001, 10000, ktup)
+    dat_mat = mat(data_arr)
+    label_mat = mat(label_arr).transpose()
+    sv_ind = nonzero(alphas.A > 0)[0]
+    svs = dat_mat[sv_ind]
+    label_sv = label_mat[sv_ind]
+    print 'there are %d support vectors' % shape(svs)[0]
+    m, n = shape(dat_mat)
+    error_count = 0
+    for i in range(m):
+        kernel_eval = kernel_trans(svs, dat_mat[i,:], ktup)
+        predict = kernel_eval.T * multiply(label_sv, alphas[sv_ind]) + b
+        if sign(predict) != sign(label_arr[i]):
+            error_count += 1
+    print 'the training error rate is: %f' % (float(error_count) / m)
+
+    data_arr, label_arr = load_images('testDigits')
+    error_count = 0
+    dat_mat = mat(data_arr)
+    label_mat = mat(label_arr).transpose()
+    m, n = shape(dat_mat)
+    for i in range(m):
+        kernel_eval = kernel_trans(svs, dat_mat[i,:], ktup)
+        predict = kernel_eval.T * multiply(label_sv, alphas[sv_ind]) + b
+        if sign(predict) != sign(label_arr[i]):
+            error_count += 1
+    print 'the test error rate is: %f' % (float(error_count) / m)
+
