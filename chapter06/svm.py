@@ -460,7 +460,7 @@ def load_images(dirname):
 
 def test_digits(ktup=('rbf', 10)):
     data_arr, label_arr = load_images('trainingDigits')
-    b, alphas = smo_p(data_arr, label_arr, 200, 0.0001, 10000, ktup)
+    b, alphas = smo_p_kernel(data_arr, label_arr, 200, 0.0001, 10000, ktup)
     dat_mat = mat(data_arr)
     label_mat = mat(label_arr).transpose()
     sv_ind = nonzero(alphas.A > 0)[0]
