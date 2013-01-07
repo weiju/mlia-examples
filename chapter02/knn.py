@@ -1,5 +1,5 @@
-from numpy import *
-from os import listdir
+import numpy as np
+import os
 import operator
 
 # **********************************************************************
@@ -9,13 +9,13 @@ import operator
 # **********************************************************************
 
 def create_dataset():
-    group = array([[1.0, 1.1], [1.0, 1.0], [0,0], [0, 0.1]])
+    group = np.array([[1.0, 1.1], [1.0, 1.0], [0,0], [0, 0.1]])
     labels = ['A', 'A', 'B', 'B']
     return group, labels
 
 def classify0(in_x, dataset, labels, k):
     dataset_size = dataset.shape[0]
-    diff_map = tile(in_x, (dataset_size, 1)) - dataset
+    diff_map = np.tile(in_x, (dataset_size, 1)) - dataset
     sq_diff_mat = diff_map**2
     sq_distances = sq_diff_mat.sum(axis=1)
     distances = sq_distances**0.5
@@ -33,7 +33,7 @@ def file2matrix(filename):
         all_lines = infile.readlines()
 
     num_lines = len(all_lines)
-    return_matrix = zeros((num_lines, 3))
+    return_matrix = np.zeros((num_lines, 3))
     index = 0
     rows = [line.strip().split('\t') for line in all_lines]
 
@@ -49,10 +49,10 @@ def auto_norm(dataset):
     min_vals = dataset.min(0)
     max_vals = dataset.max(0)
     ranges = max_vals - min_vals
-    norm_dataset = zeros(shape(dataset))
+    norm_dataset = np.zeros(np.shape(dataset))
     m = dataset.shape[0]
-    norm_dataset = dataset - tile(min_vals, (m, 1))
-    norm_dataset = norm_dataset / tile(ranges, (m, 1))
+    norm_dataset = dataset - np.tile(min_vals, (m, 1))
+    norm_dataset = norm_dataset / np.tile(ranges, (m, 1))
     return norm_dataset, ranges, min_vals
 
 ######################################################################
@@ -72,8 +72,8 @@ def dating_class_test():
         classifier_result = classify0(norm_mat[i,:],
                                       norm_mat[num_test_vecs:m,:],
                                       dating_labels[num_test_vecs:m], 3)
-        print "the classifier came back with: %d, the real answer is: %d" \
-            % (classifier_result, dating_labels[i])
+        print ("the classifier came back with: %d, the real answer is: %d"
+               % (classifier_result, dating_labels[i]))
         if classifier_result != dating_labels[i]:
             error_count += 1.0
     print "the total error rate is: %f" % (error_count / float(num_test_vecs))
@@ -86,7 +86,7 @@ def classify_person():
 
     dating_data_mat, dating_labels = file2matrix('datingTestSet.txt')
     norm_mat, ranges, min_vals = auto_norm(dating_data_mat)
-    in_arr = array([ff_miles, percent_tats, ice_cream])
+    in_arr = np.array([ff_miles, percent_tats, ice_cream])
     classifier_result = classify0((in_arr - min_vals) / ranges,
                                  norm_mat,
                                   dating_labels, 3)
@@ -100,7 +100,7 @@ def classify_person():
 
 def img2vector(filename):
     """read the data in 32x32 0/1 format"""
-    return_vect = zeros((1, 1024))
+    return_vect = np.zeros((1, 1024))
     with open(filename) as infile:
         for i in range(32):
             row = infile.readline()
@@ -114,16 +114,16 @@ def handwriting_class_test():
         return int(file_str.split('_')[0])
         
     hw_labels = []
-    training_files = listdir('trainingDigits')
+    training_files = os.listdir('trainingDigits')
     training_set_size = len(training_files)
-    training_mat = zeros((training_set_size, 1024))
+    training_mat = np.zeros((training_set_size, 1024))
     for i in range(training_set_size):
         filename = training_files[i]
         class_num = extract_classnum(filename)
         hw_labels.append(class_num)
         training_mat[i,:] = img2vector('trainingDigits/%s' % filename)
 
-    test_files = listdir('testDigits')
+    test_files = os.listdir('testDigits')
     error_count = 0.0
     test_set_size = len(test_files)
     for i in range(test_set_size):
@@ -132,11 +132,9 @@ def handwriting_class_test():
         vector_under_test = img2vector('testDigits/%s' % filename)
         classifier_result = classify0(vector_under_test, training_mat,
                                       hw_labels, 3)
-        print "the classifier came back with: %d, the real answer is: %d" \
-            % (classifier_result, class_num)
+        print ("the classifier came back with: %d, the real answer is: %d"
+               % (classifier_result, class_num))
         if classifier_result != class_num:
             error_count += 1.0
     print "\nthe total number of errors is: %d" % error_count
     print "\nthe total error rate is: %f" % (error_count / float(test_set_size))
-
-
