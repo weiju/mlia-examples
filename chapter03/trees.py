@@ -1,6 +1,7 @@
-from math import log
+import math
 import operator
 import pickle
+
 
 def create_dataset():
     dataset = [[1, 1, 'yes'],
@@ -11,6 +12,7 @@ def create_dataset():
     labels = ['no surfacing', 'flippers']
     return dataset, labels
 
+
 def split_dataset(dataset, axis, value):
     ret_dataset = []
     for feat_vec in dataset:
@@ -19,6 +21,7 @@ def split_dataset(dataset, axis, value):
             reduced_feat_vec.extend(feat_vec[axis+1:])
             ret_dataset.append(reduced_feat_vec)
     return ret_dataset
+
 
 def shannon_entropy(dataset):
     num_entries = len(dataset)
@@ -31,8 +34,9 @@ def shannon_entropy(dataset):
     shannon_ent = 0.0
     for key in label_counts:
         prob = float(label_counts[key]) / num_entries
-        shannon_ent -= prob * log(prob, 2)
+        shannon_ent -= prob * math.log(prob, 2)
     return shannon_ent
+
 
 def choose_best_feature_to_split(dataset):
     num_features = len(dataset[0]) - 1
@@ -53,6 +57,7 @@ def choose_best_feature_to_split(dataset):
             best_feature = i
     return best_feature
 
+
 def majority_count(classes):
     class_count = {}
     for vote in classes:
@@ -64,8 +69,14 @@ def majority_count(classes):
                                 reverse=True)
     return sorted_class_count[0][0]
 
+
 def create_tree(dataset, labels):
-    """Note: dataset can't be 0-sized !"""
+    """Notes:
+    1. dataset can't be 0-sized !
+    2. There is a nasty side-effect in this function: it deletes elements out of its labels
+       argument, needs rework. Due to its recursive nature, the labels parameter needs
+       to shrink, but that does not mean that a top-level call has to deal with it
+    """
     classes = [example[-1] for example in dataset]
 
     def same_class():
@@ -85,9 +96,12 @@ def create_tree(dataset, labels):
     del(labels[best_feature])
     for value in set([example[best_feature] for example in dataset]):
         sub_labels = labels[:]
-        tree[best_feature_label][value] = \
-            create_tree(split_dataset(dataset, best_feature, value), sub_labels)
+        tree[best_feature_label][value] = create_tree(split_dataset(dataset,
+                                                                    best_feature,
+                                                                    value),
+                                                      sub_labels)
     return tree
+
     
 def classify(input_tree, feat_labels, test_vec):
     first_str = input_tree.keys()[0]
@@ -101,9 +115,11 @@ def classify(input_tree, feat_labels, test_vec):
                 class_label = second_dict[key]
     return class_label
 
+
 def store_tree(input_tree, filename):
     with open(filename, 'w') as outfile:
         pickle.dump(input_tree, outfile)
+
 
 def grab_tree(filename):
     with open(filename) as infile:
